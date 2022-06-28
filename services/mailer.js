@@ -9,11 +9,23 @@ import { selectFiles } from "select-files-cli";
 
 const OAuth2 = google.auth.OAuth2;
 let token;
+const oauth2Client = new OAuth2(
+  process.env.CLIENT_ID, // ClientID
+  process.env.CLIENT_SECRET, // Client Secret
+  process.env.REDIRECT_URL // Redirect URL
+);
+
 export const main = async () => {
-  console.log(chalk.bold("Google OAuth"));
-  console.log(chalk.bold("======================"));
+  console.log(chalk.blue("\n\n\n"));
+  console.log(chalk.bold("Welcome to the Mailer Service"));
 
   token = JSON.parse(fs.readFileSync("token.json"));
+
+  oauth2Client.setCredentials({
+    refresh_token: token.refresh_token,
+  });
+  const accessToken = await oauth2Client.getAccessToken();
+
   console.log(chalk.greenBright("Choose CSV File"));
   const files = await selectFiles({
     multi: false,
@@ -62,31 +74,27 @@ export const main = async () => {
   ]);
 
   console.log(`Token: ${chalk.greenBright(token.access_token)}`);
-  await Promise.all(
-    csv.map(async (item) => {
-      await sendMail(
-        item[res.name],
-        item[res.email],
-        res.body,
-        res.subject,
-        item[res.filepath]
-      );
-    })
-  );
+
+  for (let i = 0; i < csv.length; i++) {
+    await sendMail(
+      csv[i][res.name],
+      csv[i][res.email],
+      res.body,
+      res.subject,
+      csv[i][res.filepath],
+      accessToken
+    );
+  }
 };
 
-export async function sendMail(name, email, message, subject, attachment) {
-  const oauth2Client = new OAuth2(
-    process.env.CLIENT_ID, // ClientID
-    process.env.CLIENT_SECRET, // Client Secret
-    process.env.REDIRECT_URL // Redirect URL
-  );
-  oauth2Client.setCredentials({
-    refresh_token: token.refresh_token,
-  });
-  console.log("Oauth");
-  const accessToken = await oauth2Client.getAccessToken();
-  console.log(accessToken);
+export async function sendMail(
+  name,
+  email,
+  message,
+  subject,
+  attachment,
+  accessToken
+) {
   const oauth = {
     type: "OAuth2",
     user: "ieeejmiteam@gmail.com",
@@ -96,7 +104,7 @@ export async function sendMail(name, email, message, subject, attachment) {
     accessToken: accessToken.token,
   };
 
-  console.log(oauth);
+  console.log(chalk.greenBright(`Sending Mail to ${email}`));
 
   const smtpTransport = nodemailer.createTransport({
     service: "gmail",
