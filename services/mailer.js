@@ -171,7 +171,7 @@ export async function sendMail(
 ) {
   const oauth = {
     type: "OAuth2",
-    user: "ieeejmiteam@gmail.com",
+    user: process.env.user,
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: token.refresh_token,
@@ -186,7 +186,7 @@ export async function sendMail(
   });
 
   const mailOptions = {
-    from: "ieeejmiteam@gmail.com",
+    from: process.env.user,
     to: email,
     subject: subject,
     text: message,

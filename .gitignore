@@ -1,4 +1,5 @@
 .env
+.env.test
 token.json
 node_modules
 assets/certs/*
