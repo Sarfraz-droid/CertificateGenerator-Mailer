@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { google } from "googleapis";
 import fs from "fs";
 import path from "path";
-import { read_csv, write_csv } from "../utils/read_csv.js";
+import { get_csv, read_csv, write_csv } from "../utils/read_csv.js";
 import { selectFiles } from "select-files-cli";
 
 const OAuth2 = google.auth.OAuth2;
@@ -15,10 +15,35 @@ const oauth2Client = new OAuth2(
   process.env.REDIRECT_URL // Redirect URL
 );
 
-export const main = async () => {
-  console.log(chalk.blue("\n\n\n"));
-  console.log(chalk.bold("Welcome to the Mailer Service"));
+const mailChoices = {
+  Mail_Generated_Certificates: "Mail Generated Certificates",
+  Mailer: "Mailer",
+  Exit: "Exit",
+};
 
+export const main = async () => {
+  console.clear();
+  console.log(chalk.bold("Mailer"));
+  console.log(chalk.bold("================="));
+  console.log(Object.keys(mailChoices), Object.values(mailChoices));
+  const res = await inquirer.prompt({
+    type: "list",
+    name: "action",
+
+    choices: Object.values(mailChoices),
+  });
+
+  switch (res.action) {
+    case mailChoices.Mail_Generated_Certificates:
+      await mail_generated_certificates();
+      break;
+
+    case mailChoices.Mailer:
+      await mailer();
+  }
+};
+
+const generateAccessToken = async () => {
   token = JSON.parse(fs.readFileSync("token.json"));
 
   oauth2Client.setCredentials({
@@ -26,25 +51,73 @@ export const main = async () => {
   });
   const accessToken = await oauth2Client.getAccessToken();
 
-  console.log(chalk.greenBright("Choose CSV File"));
+  return accessToken;
+};
+
+export const mailer = async () => {
+  console.clear();
+  console.log(chalk.bold("Mailer"));
+  console.log(chalk.bold("================="));
+
+  const accessToken = await generateAccessToken();
+
+  const csv = await get_csv();
+
+  const res = await inquirer.prompt([
+    {
+      type: "list",
+      name: "name",
+      choices: Object.keys(csv[0]),
+    },
+    {
+      type: "list",
+      name: "email",
+      choices: Object.keys(csv[0]),
+    },
+    {
+      type: "input",
+      name: "subject",
+      message: "Subject",
+    },
+    {
+      type: "editor",
+      name: "body",
+    },
+  ]);
+
   const files = await selectFiles({
-    multi: false,
     startingPath: "./assets",
-    directoryFilter: (directoryName) => {
-      return false;
-    },
-    fileFilter: (fileName) => {
-      return fileName.endsWith(".csv");
-    },
+    name: "files",
+    directoryFilter: (directoryName) => false,
   });
 
-  if (files.selectedFiles.length === 0) {
-    console.log(chalk.red("No files selected"));
-    return;
-  }
+  const filesData = files.selectedFiles.map((file) => {
+    return {
+      filename: path.basename(file),
+      path: path.resolve(file),
+    };
+  });
 
-  const file = files.selectedFiles[0];
-  const csv = await read_csv(file);
+  for (let i = 0; i < csv.length; i++) {
+    await sendMail(
+      csv[i][res.name],
+      csv[i][res.email],
+      res.body,
+      res.subject,
+      filesData,
+      accessToken
+    );
+  }
+};
+
+export const mail_generated_certificates = async () => {
+  console.log(chalk.blue("\n\n\n"));
+  console.log(chalk.bold("Welcome to the Mailer Service"));
+
+  const accessToken = await generateAccessToken();
+
+  console.log(chalk.greenBright("Choose CSV File"));
+  const csv = await get_csv();
 
   const res = await inquirer.prompt([
     {
@@ -73,15 +146,16 @@ export const main = async () => {
     },
   ]);
 
-  console.log(`Token: ${chalk.greenBright(token.access_token)}`);
-
   for (let i = 0; i < csv.length; i++) {
     await sendMail(
       csv[i][res.name],
       csv[i][res.email],
       res.body,
       res.subject,
-      csv[i][res.filepath],
+      {
+        name: `${csv[i][res.name]}.png`,
+        path: csv[i][res.filepath],
+      },
       accessToken
     );
   }
@@ -117,12 +191,7 @@ export async function sendMail(
     subject: subject,
     text: message,
     html: `<b>${message}</b>`,
-    attachments: [
-      {
-        filename: `${name}.png`,
-        path: attachment,
-      },
-    ],
+    attachments: attachment,
   };
 
   return new Promise(async (resolve, reject) => {
