@@ -190,7 +190,7 @@ export async function sendMail(
     to: email,
     subject: subject,
     text: message,
-    html: `<b>${message}</b>`,
+    html: `${message}`,
     attachments: attachment,
   };
 
