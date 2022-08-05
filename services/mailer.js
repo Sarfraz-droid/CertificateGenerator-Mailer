@@ -54,6 +54,34 @@ const generateAccessToken = async () => {
   return accessToken;
 };
 
+const get_body = async (option) => {
+
+  console.log(option);
+  let body = "";
+  if(option === "Enter your message here"){
+    body = await inquirer.prompt({
+      type: "editor",
+      name: "body",
+    });
+  }else{
+    const bodyFile = await selectFiles({
+      startingPath: "./assets",
+      directoryFilter: (directoryName) => false,
+      fileFilter: (fileName) => fileName.endsWith(".txt"),
+      multi: false
+    })
+
+    // console.log(fs.readFileSync(path.resolve(bodyFile.selectedFiles[0]),"utf8"));
+
+    if(bodyFile.selectedFiles.length > 0){
+      body = fs.readFileSync(path.resolve(`./${bodyFile.selectedFiles[0]}`), "utf8");
+    }
+  }
+
+  return body;
+
+}
+
 export const mailer = async () => {
   console.clear();
   console.log(chalk.bold("Mailer"));
@@ -80,11 +108,19 @@ export const mailer = async () => {
       message: "Subject",
     },
     {
-      type: "editor",
-      name: "body",
-    },
+      type: "list",
+      name: "bodyOption",
+      choices: [
+          "Enter your message here",
+          "Fetch from a .txt file",
+      ]
+    }
+    // {
+    //   type: "editor",
+    //   name: "body",
+    // },
   ]);
-
+  const body = await get_body(res.bodyOption);
   const files = await selectFiles({
     startingPath: "./assets",
     name: "files",
@@ -102,7 +138,7 @@ export const mailer = async () => {
     await sendMail(
       csv[i][res.name],
       csv[i][res.email],
-      res.body,
+      body,
       res.subject,
       filesData,
       accessToken
@@ -140,20 +176,29 @@ export const mail_generated_certificates = async () => {
       name: "subject",
       message: "Subject",
     },
+    // {
+    //   type: "editor",
+    //   name: "body",
+    // },
     {
-      type: "editor",
-      name: "body",
-    },
+      type: "list",
+      name: "bodyOption",
+      choices: [
+        "Enter your message here",
+        "Fetch from a .txt file",
+      ]
+    }
   ]);
 
+  const body = await get_body(res.bodyOption);
   for (let i = 0; i < csv.length; i++) {
     await sendMail(
       csv[i][res.name],
       csv[i][res.email],
-      res.body,
+      body,
       res.subject,
       {
-        name: `${csv[i][res.name]}.png`,
+        filename: `${csv[i][res.name]}.png`,
         path: csv[i][res.filepath],
       },
       accessToken

@@ -2,5 +2,8 @@
 .env.test
 token.json
 node_modules
+package-lock.json
+yarn.lock
 assets/certs/*
 assets/*.csv
+.idea
