@@ -2,13 +2,13 @@ import chalk from "chalk";
 import inquirer from "inquirer";
 import "dotenv/config";
 import inquirerfilepath from "inquirer-file-path";
-import { main as mainCertGen } from "./services/CertificateGenerator.js";
+import { main as mainCertGen } from "./services/certificateGenerator.js";
 import { main as mainOauth } from "./services/mailer.js";
 
 inquirer.registerPrompt("filePath", inquirerfilepath);
 
 const init = async () => {
-  const startingMailer = chalk.green("Starting mailer...");
+  chalk.green("Starting mailer...");
 
   console.log(chalk.bold("IEEE JMI Mailer"));
   console.log(chalk.bold("================="));
@@ -34,6 +34,7 @@ const getValues = async () => {
 const res = await getValues();
 
 const choiceTaker = async (res) => {
+  let temp;
   switch (res) {
     case 2:
       console.clear();
@@ -49,7 +50,7 @@ const choiceTaker = async (res) => {
       console.clear();
       console.log(chalk.red("Invalid option"));
       await init();
-      const temp = await getValues();
+      temp = await getValues();
       await choiceTaker(temp);
       break;
   }

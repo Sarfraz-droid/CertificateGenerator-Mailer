@@ -1,10 +1,8 @@
 import chalk from "chalk";
 import { selectFiles } from "select-files-cli";
-import Jimp from "jimp";
-import * as path from "path";
-
 import { read_csv, write_csv } from "../utils/read_csv.js";
 import inquirer from "inquirer";
+import gen_certs from "./genCerts.js";
 
 export const main = async () => {
   console.log(chalk.bold("Certificate Generator"));
@@ -19,7 +17,7 @@ export const main = async () => {
   const files = await selectFiles({
     multi: false,
     startingPath: "./assets",
-    directoryFilter: (directoryName) => {
+    directoryFilter: () => {
       return false;
     },
     fileFilter: (fileName) => {
@@ -33,13 +31,13 @@ export const main = async () => {
   }
 
   const file = files.selectedFiles[0];
-
+  let values;
   switch (res.action) {
     case "Generate Certificate":
-      await GeneratorService(file);
+      await generatorService(file);
       break;
     case "Generate Sample":
-      const values = await inquirer.prompt([
+      values = await inquirer.prompt([
         {
           type: "input",
           name: "head",
@@ -58,13 +56,13 @@ export const main = async () => {
   }
 };
 
-const GeneratorService = async (image) => {
+const generatorService = async (image) => {
   console.log(chalk.blue("Choose File"));
 
   const files = await selectFiles({
     multi: false,
     startingPath: "./assets",
-    directoryFilter: (directoryName) => {
+    directoryFilter: () => {
       return false;
     },
     fileFilter: (fileName) => {
@@ -98,7 +96,7 @@ const GeneratorService = async (image) => {
     {
       type: "list",
       name: "para",
-      choices: Object.keys(csv[0]),
+      choices: [...Object.keys(csv[0]), "none"],
     },
   ]);
 
@@ -106,7 +104,7 @@ const GeneratorService = async (image) => {
 
   const new_csv = await Promise.all(
     csv.map(async (item) => {
-      const path = await gen_certs(item[res.head], item[res.para], image);
+      const path = await gen_certs(item[res.head], item[res?.para], image);
       console.log(path);
 
       return {
@@ -120,44 +118,4 @@ const GeneratorService = async (image) => {
   await write_csv(file, new_csv);
   console.log(chalk.bgWhite.black("!!CSV Updated!!"));
   console.log(new_csv);
-};
-
-const gen_certs = async (head, para, _image) => {
-  console.log();
-  const HeadFont = await Jimp.loadFont(
-    path.resolve("assets/fonts/HeadFont/HeadFont.fnt")
-  );
-  const ParaFont = await Jimp.loadFont(
-    path.resolve("assets/fonts/Parafont/ParaFont.fnt")
-  );
-
-  const image = await Jimp.read(path.resolve(_image));
-
-  image.print(
-    HeadFont,
-    0,
-    1130,
-    {
-      text: head,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_RIGHT,
-    },
-    3140
-  );
-  image.print(
-    ParaFont,
-    3140 - 2000,
-    1365,
-    {
-      text: para,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_RIGHT,
-    },
-    2000
-  );
-
-  const filename = path.resolve(`assets/certs/${encodeURI(head)}.png`);
-  image.write(filename);
-
-  console.log(chalk.green(`Certificate generated - ${head} - ${para}`));
-
-  return filename;
 };

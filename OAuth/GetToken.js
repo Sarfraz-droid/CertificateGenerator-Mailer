@@ -81,6 +81,6 @@ export function getNewToken(oAuth2Client, callback) {
   });
 }
 
-export function listLabels(auth) {
+export function listLabels() {
   console.log(chalk.redBright("Authenticated"));
 }

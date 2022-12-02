@@ -1,13 +1,14 @@
 import csv from "csv-parser";
 import converter from "json-2-csv";
 import fs from "fs";
+import chalk from "chalk";
 import { selectFiles } from "select-files-cli";
 
 export const get_csv = async () => {
   const files = await selectFiles({
     multi: false,
     startingPath: "./assets",
-    directoryFilter: (directoryName) => {
+    directoryFilter: () => {
       return false;
     },
     fileFilter: (fileName) => {
