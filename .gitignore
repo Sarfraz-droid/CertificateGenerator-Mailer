@@ -6,5 +6,4 @@ package-lock.json
 yarn.lock
 assets/certs/*
 assets/*.csv
-assets/*
 .idea
