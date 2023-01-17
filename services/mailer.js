@@ -48,6 +48,7 @@ export const main = async () => {
 export const mailer = async () => {
   const accessToken = await generateAccessToken();
   const csv = await get_csv();
+  console.log("Mail Prompts");
   const res = await getMailPrompts(csv);
   const body = await getBodyData(res.bodyOption);
   const files = await selectFiles({

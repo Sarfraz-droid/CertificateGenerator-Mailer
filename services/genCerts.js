@@ -32,7 +32,7 @@ const gen_certs = async (head, para, _image) => {
             3140 - 2002,
             1365,
             {
-                text: _.words(para).map(_.capitalize).join(' '),
+                text: para,
                 alignmentX: Jimp.HORIZONTAL_ALIGN_RIGHT,
             },
             2000
