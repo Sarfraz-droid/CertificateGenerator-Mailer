@@ -45,16 +45,18 @@ export const getBodyData = async (option) => {
  * @param {boolean} isCertificate 
  * @returns {json}
  */
-export const getMailPrompts = async (csv, isCertificate = false) => {
+export const getMailPrompts = async (csv) => {
     const res = await inquirer.prompt([
-        (
-            isCertificate &&
-            {
-                type: "list",
-                name: "filepath",
-                choices: Object.keys(csv[0]),
-            }
-        ),
+        {
+            type: "list",
+            name: "filepath",
+            choices: [...Object.keys(csv[0]), "I don't want to attach any file"],
+        },
+        {
+            type: "list",
+            name: "file_name",
+            choices: [...Object.keys(csv[0]), "I don't want to attach any file"],
+        },
         {
             type: "list",
             name: "name",
@@ -81,6 +83,21 @@ export const getMailPrompts = async (csv, isCertificate = false) => {
     ]);
 
     return res;
+}
+
+export const parseBody = (body, data) => {    
+    const regex = /{{(.*?)}}/g;
+
+    const matches = body.match(regex);
+
+    if (matches) {
+        matches.forEach(match => {
+            const key = match.replace(/{{|}}/g, "").trim();
+            body = body.replace(match, data[key]);
+        })
+    }
+
+    return body;
 }
 
 

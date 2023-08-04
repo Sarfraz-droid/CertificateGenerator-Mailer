@@ -1,11 +1,12 @@
 import chalk from "chalk";
 import inquirer from "inquirer";
-import path from "path";
+// import path from "path";
 import { get_csv } from "../utils/read_csv.js";
-import { selectFiles } from "select-files-cli";
+// import { selectFiles } from "select-files-cli";
 import { generateAccessToken } from "../utils/generateAccessToken.js";
 import { sendMail } from "../utils/sendMail.js";
-import { getBodyData, getMailPrompts } from "../utils/mailer-utils.js";
+import { getBodyData, getMailPrompts, parseBody } from "../utils/mailer-utils.js";
+import path from "path";
 
 
 const mailChoices = {
@@ -51,23 +52,34 @@ export const mailer = async () => {
   console.log("Mail Prompts");
   const res = await getMailPrompts(csv);
   const body = await getBodyData(res.bodyOption);
-  const files = await selectFiles({
-    startingPath: "./assets",
-    name: "files",
-    directoryFilter: () => false,
-  });
-  const filesData = files.selectedFiles.map((file) => {
-    return {
-      filename: path.basename(file),
-      path: path.resolve(file),
-    };
-  });
+  const folder = path.join("assets", "files");
+  // const files = await selectFiles({
+  //   startingPath: "./assets",
+  //   name: "files",
+  //   directoryFilter: () => false,
+  // });
 
+
+  
+  // const filesData = files.selectedFiles.map((file) => {
+  //   return {
+  //     filename: path.basename(file),
+  //     path: path.resolve(file),
+  //   };
+  // });
+  
   for (let i = 0; i < csv.length; i++) {
+    const filesData = {
+      filename: path.basename(csv[i][res.file_name]),
+      path: path.join(folder,csv[i][res.filepath]),
+    }
+
+    const updatedBody = parseBody(body, csv[i])
+
     await sendMail(
       csv[i][res.name],
       csv[i][res.email],
-      body,
+      updatedBody,
       res.subject,
       filesData,
       accessToken
