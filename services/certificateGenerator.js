@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { selectFiles } from "select-files-cli";
 import { read_csv, write_csv } from "../utils/read_csv.js";
 import inquirer from "inquirer";
-import gen_certs from "./genCerts.js";
+import gen_certs, { fontValues } from "./genCerts.js";
 
 export const main = async () => {
   console.log(chalk.bold("Certificate Generator"));
@@ -21,7 +21,7 @@ export const main = async () => {
       return false;
     },
     fileFilter: (fileName) => {
-      return fileName.endsWith(".png");
+      return fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".jpeg");
     },
   });
 
@@ -32,6 +32,7 @@ export const main = async () => {
 
   const file = files.selectedFiles[0];
   let values;
+  fontValues.resetValues()
   switch (res.action) {
     case "Generate Certificate":
       await generatorService(file);
@@ -80,12 +81,12 @@ const generatorService = async (image) => {
   console.log(chalk.green(`Selected file: ${file}`));
 
   const csv = await read_csv(file);
-  console.log(csv);
+  // console.log(csv);
 
   console.log(chalk.bgRed.white(Object.keys(csv[0]).join("\t")));
-  csv.forEach((item) => {
-    console.log(Object.values(item).join("\t"));
-  });
+  // csv.forEach((item) => {
+  //   console.log(Object.values(item).join("\t"));
+  // });
 
   const res = await inquirer.prompt([
     {
@@ -102,10 +103,11 @@ const generatorService = async (image) => {
 
   console.log(res);
 
+  await fontValues.promptValues()
+
   const new_csv = await Promise.all(
     csv.map(async (item) => {
       const path = await gen_certs(item[res.head], item[res?.para], image);
-      console.log(path);
 
       return {
         ...item,

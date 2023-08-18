@@ -8,7 +8,6 @@ import { sendMail } from "../utils/sendMail.js";
 import { getBodyData, getMailPrompts, parseBody } from "../utils/mailer-utils.js";
 import path from "path";
 
-
 const mailChoices = {
   Mail_Generated_Certificates: "Mail Generated Certificates",
   Mailer: "Mailer",
